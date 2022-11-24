@@ -1,9 +1,7 @@
 package com.travl.models;
 
-import java.sql.Date;
 import java.time.LocalDate;
 import javax.persistence.*;
-
 import com.travl.enums.TravelMode;
 import lombok.*;
 
@@ -30,10 +28,10 @@ public class Proposal {
     private String destination;
 
     @Column(name = "start_date")
-    private Date startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    private Date endDate;
+    private LocalDate endDate;
 
     @Column(name = "travel_mode")
     @Enumerated(EnumType.STRING)
