@@ -2,6 +2,8 @@ package com.travl.models;
 
 import java.time.LocalDate;
 import javax.persistence.*;
+
+import com.travl.enums.ProposalStatus;
 import com.travl.enums.TravelMode;
 import lombok.*;
 
@@ -36,4 +38,8 @@ public class Proposal {
     @Column(name = "travel_mode")
     @Enumerated(EnumType.STRING)
     private TravelMode travelMode;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private ProposalStatus proposalStatus;
 }
