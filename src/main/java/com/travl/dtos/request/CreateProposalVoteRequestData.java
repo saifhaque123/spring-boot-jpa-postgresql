@@ -3,7 +3,7 @@ package com.travl.dtos.request;
 import lombok.Data;
 
 @Data
-public class ProposalVoteRequest {
+public class CreateProposalVoteRequestData {
     private Long id;
     private Long proposalId;
     private String userName;

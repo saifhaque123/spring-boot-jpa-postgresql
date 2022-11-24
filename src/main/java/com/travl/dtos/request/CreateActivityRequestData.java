@@ -4,7 +4,7 @@ import com.travl.enums.ActivityType;
 import lombok.Data;
 
 @Data
-public class ActivityRequest {
+public class CreateActivityRequestData {
    private Long id;
    private Long placeId;
    private String activityName;

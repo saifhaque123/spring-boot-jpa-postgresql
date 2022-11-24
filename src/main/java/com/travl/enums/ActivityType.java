@@ -8,7 +8,8 @@ import java.util.Arrays;
 public enum ActivityType {
     ADVENTURE("ADVENTURE"),
     TREK("TREK"),
-    SCUBADIVING("SCUBA DIVING");
+    SCUBADIVING("SCUBA DIVING"),
+    OTHER("OTHER");
     private String type;
 
     ActivityType(String type) {

@@ -1,12 +1,12 @@
 package com.travl.service;
 
-import com.travl.dtos.request.ActivityRequest;
+import com.travl.dtos.request.CreateActivityRequestData;
 import com.travl.enums.ProposalStatus;
 import com.travl.models.PlaceActivity;
 import com.travl.models.Proposal;
-import com.travl.dtos.request.ProposalDto;
+import com.travl.dtos.response.ProposalResponseData;
 import com.travl.models.ProposalVote;
-import com.travl.dtos.request.ProposalVoteRequest;
+import com.travl.dtos.request.CreateProposalVoteRequestData;
 import com.travl.repositories.PlaceActivityRepository;
 import com.travl.repositories.ProposalRepository;
 import com.travl.repositories.ProposalVoteRepository;
@@ -29,10 +29,10 @@ public class ProposalService {
     @Autowired
     PlaceActivityRepository placeActivityRepository;
 
-    public ProposalDto getProposal(long proposalId){
+    public ProposalResponseData getProposal(long proposalId){
         Optional<Proposal> proposalOptional = proposalRepo.findById(proposalId);
         if(proposalOptional.isPresent()){
-            ProposalDto proposalData = new ProposalDto();
+            ProposalResponseData proposalData = new ProposalResponseData();
             Proposal proposal= proposalOptional.get();
             proposalData.setId(proposalId);
             proposalData.setDestination(proposal.getDestination());
@@ -42,7 +42,7 @@ public class ProposalService {
             proposalData.setTravelMode(proposal.getTravelMode());
             proposalData.setStatus(proposal.getProposalStatus());
             Optional<List<ProposalVote>> proposalVotesList = proposalVoteRepo.findByProposalId(proposalId);
-            if(proposalVotesList.isPresent()) {
+            if(!proposalVotesList.get().isEmpty()) {
                 List<ProposalVote> proposalVotes = proposalVotesList.get();
                 proposalData.setVotersCount(proposalVotes.size());
                 proposalData.setVote(proposalVotes.stream().mapToInt(i->i.getVote()).average().getAsDouble());
@@ -53,7 +53,7 @@ public class ProposalService {
         }
     }
 
-    public ProposalVote createProposalVote(ProposalVoteRequest requestData) {
+    public ProposalVote createProposalVote(CreateProposalVoteRequestData requestData) {
         ProposalVote pVote = ProposalVote.builder().proposalId(requestData.getProposalId())
                 .userName(requestData.getUserName())
                 .vote(requestData.getVote()).build();
@@ -61,10 +61,10 @@ public class ProposalService {
         return savedVote;
     }
 
-    public ProposalDto updateProposalState(Long proposalId, ProposalStatus status) {
+    public ProposalResponseData updateProposalState(Long proposalId, ProposalStatus status) {
         Optional<Proposal> proposalOptional = proposalRepo.findById(proposalId);
         if(proposalOptional.isPresent()){
-            ProposalDto proposalData = new ProposalDto();
+            ProposalResponseData proposalData = new ProposalResponseData();
             Proposal proposal= proposalOptional.get();
             proposal.setProposalStatus(status);
             Proposal updatedProposal = proposalRepo.save(proposal);
@@ -87,13 +87,13 @@ public class ProposalService {
         }
     }
 
-    public List<ProposalDto> getAllProposal() {
+    public List<ProposalResponseData> getAllProposal() {
         Optional<List<Proposal>> proposalListOptional = Optional.of(proposalRepo.findAll());
         if(proposalListOptional.isPresent()){
-            List<ProposalDto> responseList = new ArrayList<>();
+            List<ProposalResponseData> responseList = new ArrayList<>();
             List<Proposal> proposalList= proposalListOptional.get();
             for(Proposal proposal:proposalList){
-                ProposalDto proposalData = new ProposalDto();
+                ProposalResponseData proposalData = new ProposalResponseData();
                 proposalData.setId(proposal.getId());
                 proposalData.setDestination(proposal.getDestination());
                 proposalData.setSource(proposal.getSource());
@@ -102,7 +102,7 @@ public class ProposalService {
                 proposalData.setTravelMode(proposal.getTravelMode());
                 proposalData.setStatus(proposal.getProposalStatus());
                 Optional<List<ProposalVote>> proposalVotesList = proposalVoteRepo.findByProposalId(proposal.getId());
-                if(proposalVotesList.isPresent()) {
+                if(!proposalVotesList.get().isEmpty()) {
                     List<ProposalVote> proposalVotes = proposalVotesList.get();
                     proposalData.setVotersCount(proposalVotes.size());
                     proposalData.setVote(proposalVotes.stream().mapToInt(i->i.getVote()).average().getAsDouble());
@@ -115,7 +115,7 @@ public class ProposalService {
         }
     }
 
-    public PlaceActivity createPlaceActivity(ActivityRequest requestData) {
+    public PlaceActivity createPlaceActivity(CreateActivityRequestData requestData) {
         PlaceActivity placeActivity = PlaceActivity.builder().id(requestData.getId())
                 .placeId(requestData.getPlaceId())
                 .activityName(requestData.getActivityName())

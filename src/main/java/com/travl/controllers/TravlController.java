@@ -4,9 +4,12 @@ import com.travl.dtos.request.CreatePlaceRequestData;
 import com.travl.dtos.request.CreatePlaceVoteRequestData;
 import com.travl.dtos.request.CreateProposalRequestData;
 import com.travl.dtos.response.PlaceVoteResponseData;
+import com.travl.dtos.response.ProposalResponseData;
+import com.travl.dtos.response.ResponseData;
 import com.travl.models.Place;
 import com.travl.models.PlaceVote;
 import com.travl.models.Proposal;
+import com.travl.repositories.PlaceActivityRepository;
 import com.travl.repositories.PlaceRepository;
 import com.travl.repositories.PlaceVoteRepository;
 import com.travl.dtos.request.*;
@@ -15,7 +18,6 @@ import com.travl.models.*;
 import com.travl.repositories.ProposalRepository;
 import com.travl.service.ProposalService;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +25,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -35,9 +36,8 @@ public class TravlController {
     private final ProposalRepository proposalRepository;
     private final PlaceRepository placeRepository;
     private final PlaceVoteRepository placeVoteRepository;
-
-    @Autowired
-    ProposalService proposalService;
+    private final PlaceActivityRepository placeActivityRepository;
+    private final ProposalService proposalService;
 
     @PostMapping(
             path = "/proposal",
@@ -58,10 +58,10 @@ public class TravlController {
                 .body(proposal);
     }
 
-    @GetMapping(path = "/proposals/{proposalId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/proposal/{proposalId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseData> getProposal(@PathVariable final Long proposalId){
         ResponseData response = new ResponseData();
-        ProposalDto proposal = proposalService.getProposal(proposalId);
+        ProposalResponseData proposal = proposalService.getProposal(proposalId);
         if(null!=proposal){
             response.setSuccess(true);
             response.setData(proposal);
@@ -75,15 +75,48 @@ public class TravlController {
 
 
     @GetMapping(path = "/proposals", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseData> getAllProposal(){
+    public ResponseEntity<ResponseData> getAllProposal(@RequestParam ProposalStatus status){
         ResponseData response = new ResponseData();
-        List<ProposalDto> proposal = proposalService.getAllProposal();
+        List<ProposalResponseData> proposal = proposalService.getAllProposal();
+        if (status != null) {
+            proposal.stream().filter(i->i.getStatus().equals(status));
+        }
         if(null!=proposal){
             response.setSuccess(true);
             response.setData(proposal);
         }else{
             response.setSuccess(false);
             response.setErrorMessage("No Proposal found! Please create new proposals ! ");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping(path = "/proposal/{proposalId}/vote", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData> createProposalVote(@PathVariable final Long proposalId, @RequestBody final CreateProposalVoteRequestData requestData) {
+        ResponseData response = new ResponseData();
+        requestData.setProposalId(proposalId);
+        ProposalVote proposalVote = proposalService.createProposalVote(requestData);
+        if(proposalVote!=null){
+            response.setSuccess(true);
+            response.setData(proposalVote);
+        }else{
+            response.setSuccess(false);
+            response.setErrorMessage("Error in casting proposal vote : "+requestData.toString());
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+
+    @PatchMapping (path = "/proposal/{proposalId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData> updateProposalStatus(@PathVariable final Long proposalId, @RequestParam final ProposalStatus status) {
+        ResponseData response = new ResponseData();
+        ProposalResponseData proposal = proposalService.updateProposalState(proposalId, status);
+        if(proposal!=null){
+            response.setSuccess(true);
+            response.setData(proposal);
+        }else{
+            response.setSuccess(false);
+            response.setErrorMessage("Error in updating proposal : "+proposalId+ " to state : "+ status);
         }
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
@@ -108,15 +141,17 @@ public class TravlController {
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<PlaceVoteResponseData>> getPlaces(@PathVariable("proposal_id") Long proposalId) {
         List<Place> places = placeRepository.findAllByProposalId(proposalId);
-        List<PlaceVoteResponseData> responses = null;
+        List<PlaceVoteResponseData> responses = new ArrayList<PlaceVoteResponseData>();
 
         for (Place place : places) {
             List<PlaceVote> placeVotes = placeVoteRepository.findAllByPlaceId(place.getId());
             PlaceVoteResponseData response = new PlaceVoteResponseData();
             response.setPlaceId(place.getId());
             response.setPlaceName(place.getPlaceName());
-            response.setVotersCount(placeVotes.size());
-            response.setVote(placeVotes.stream().mapToInt(i->i.getVote()).average().getAsDouble());
+            if (!placeVotes.isEmpty()) {
+                response.setVotersCount(placeVotes.size());
+                response.setVote(placeVotes.stream().mapToInt(i->i.getVote()).average().getAsDouble());
+            }
             responses.add(response);
         }
 
@@ -125,7 +160,7 @@ public class TravlController {
     }
 
     @PostMapping(
-            path = "/place/{place_id}/votes",
+            path = "/proposal/{proposalId}/place/{place_id}/votes",
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PlaceVote> createPlaceVote( @PathVariable("place_id") Long placeId,
                                               @RequestBody final CreatePlaceVoteRequestData requestData) {
@@ -134,46 +169,14 @@ public class TravlController {
                 .userName(requestData.getUserName())
                 .vote(requestData.getVote())
                 .build();
-
+        placeVoteRepository.save(placeVote);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(placeVote);
     }
 
-
-    @PostMapping(path = "/proposals/{proposalId}/vote", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseData> createProposalVote(@PathVariable final Long proposalId, @RequestBody final ProposalVoteRequest requestData) {
-        ResponseData response = new ResponseData();
-        requestData.setProposalId(proposalId);
-        ProposalVote proposalVote = proposalService.createProposalVote(requestData);
-        if(proposalVote!=null){
-            response.setSuccess(true);
-            response.setData(proposalVote);
-        }else{
-            response.setSuccess(false);
-            response.setErrorMessage("Error in casting proposal vote : "+requestData.toString());
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
-
-    @PatchMapping (path = "/proposals/{proposalId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseData> updateProposalStatus(@PathVariable final Long proposalId, @RequestParam final ProposalStatus status) {
-        ResponseData response = new ResponseData();
-        ProposalDto proposal = proposalService.updateProposalState(proposalId, status);
-        if(proposal!=null){
-            response.setSuccess(true);
-            response.setData(proposal);
-        }else{
-            response.setSuccess(false);
-            response.setErrorMessage("Error in updating proposal : "+proposalId+ " to state : "+ status);
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
-
-    @PostMapping(path = "/proposals/{proposalId}/place/{placeId}/activity", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ResponseData> createPlaceActivity(@PathVariable final Long proposalId, @PathVariable final Long placeId, @RequestBody final ActivityRequest requestData) {
+    @PostMapping(path = "/proposal/{proposalId}/place/{placeId}/activity", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData> createPlaceActivity(@PathVariable final Long proposalId, @PathVariable final Long placeId, @RequestBody final CreateActivityRequestData requestData) {
         ResponseData response = new ResponseData();
         requestData.setPlaceId(placeId);
         PlaceActivity placeActivity = proposalService.createPlaceActivity(requestData);
@@ -185,5 +188,11 @@ public class TravlController {
             response.setErrorMessage("Error in creating activity for place id : "+requestData.getPlaceId() +" and proposal id : "+ proposalId);
         }
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping(path = "/proposal/{proposalId}/place/{placeId}/activities", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<PlaceActivity>> getPlaceActivites(@PathVariable final Long proposalId, @PathVariable final Long placeId) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(placeActivityRepository.findAllByPlaceId(placeId));
     }
 }
