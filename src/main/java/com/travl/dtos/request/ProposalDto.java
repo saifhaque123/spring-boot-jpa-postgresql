@@ -1,4 +1,4 @@
-package com.travl.models;
+package com.travl.dtos.request;
 
 import com.travl.enums.ProposalStatus;
 import com.travl.enums.TravelMode;

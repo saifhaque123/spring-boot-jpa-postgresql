@@ -1,8 +1,7 @@
 package com.travl.controllers;
 
-import com.travl.dtos.request.CreateProposalRequestData;
+import com.travl.dtos.request.*;
 import com.travl.enums.ProposalStatus;
-import com.travl.enums.TravelMode;
 import com.travl.models.*;
 import com.travl.repositories.ProposalRepository;
 import com.travl.service.ProposalService;
@@ -99,6 +98,22 @@ public class TravlController {
         }else{
             response.setSuccess(false);
             response.setErrorMessage("Error in updating proposal : "+proposalId+ " to state : "+ status);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+
+    @PostMapping(path = "/proposals/{proposalId}/place/{placeId}/activity", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData> createPlaceActivity(@PathVariable final Long proposalId, @PathVariable final Long placeId, @RequestBody final ActivityRequest requestData) {
+        ResponseData response = new ResponseData();
+        requestData.setPlaceId(placeId);
+        PlaceActivity placeActivity = proposalService.createPlaceActivity(requestData);
+        if(placeActivity!=null){
+            response.setSuccess(true);
+            response.setData(placeActivity);
+        }else{
+            response.setSuccess(false);
+            response.setErrorMessage("Error in creating activity for place id : "+requestData.getPlaceId() +" and proposal id : "+ proposalId);
         }
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }

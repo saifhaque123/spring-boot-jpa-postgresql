@@ -1,4 +1,4 @@
-package com.travl.models;
+package com.travl.dtos.request;
 
 import lombok.Data;
 

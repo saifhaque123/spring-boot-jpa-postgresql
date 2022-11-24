@@ -1,10 +1,13 @@
 package com.travl.service;
 
+import com.travl.dtos.request.ActivityRequest;
 import com.travl.enums.ProposalStatus;
+import com.travl.models.PlaceActivity;
 import com.travl.models.Proposal;
-import com.travl.models.ProposalDto;
+import com.travl.dtos.request.ProposalDto;
 import com.travl.models.ProposalVote;
-import com.travl.models.ProposalVoteRequest;
+import com.travl.dtos.request.ProposalVoteRequest;
+import com.travl.repositories.PlaceActivityRepository;
 import com.travl.repositories.ProposalRepository;
 import com.travl.repositories.ProposalVoteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +25,9 @@ public class ProposalService {
 
     @Autowired
     ProposalVoteRepository proposalVoteRepo;
+
+    @Autowired
+    PlaceActivityRepository placeActivityRepository;
 
     public ProposalDto getProposal(long proposalId){
         Optional<Proposal> proposalOptional = proposalRepo.findById(proposalId);
@@ -107,5 +113,14 @@ public class ProposalService {
         } else {
             return null;
         }
+    }
+
+    public PlaceActivity createPlaceActivity(ActivityRequest requestData) {
+        PlaceActivity placeActivity = PlaceActivity.builder().id(requestData.getId())
+                .placeId(requestData.getPlaceId())
+                .activityName(requestData.getActivityName())
+                .activityType(requestData.getActivityType()).build();
+        PlaceActivity savedResult = placeActivityRepository.save(placeActivity);
+        return savedResult;
     }
 }
