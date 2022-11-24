@@ -1,10 +1,9 @@
 package com.travl.controllers;
 
 import com.travl.dtos.request.CreateProposalRequestData;
+import com.travl.enums.ProposalStatus;
 import com.travl.enums.TravelMode;
-import com.travl.models.Proposal;
-import com.travl.models.ProposalDto;
-import com.travl.models.ResponseData;
+import com.travl.models.*;
 import com.travl.repositories.ProposalRepository;
 import com.travl.service.ProposalService;
 import lombok.AllArgsConstructor;
@@ -13,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -49,14 +50,56 @@ public class TravlController {
         if(null!=proposal){
             response.setSuccess(true);
             response.setData(proposal);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
         }else{
             response.setSuccess(false);
             response.setErrorMessage("No Proposal found for proposal id "+proposalId);
-            return ResponseEntity.status(HttpStatus.OK).body(response);
         }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
 
     }
 
 
+    @GetMapping(path = "/proposals", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData> getAllProposal(){
+        ResponseData response = new ResponseData();
+        List<ProposalDto> proposal = proposalService.getAllProposal();
+        if(null!=proposal){
+            response.setSuccess(true);
+            response.setData(proposal);
+        }else{
+            response.setSuccess(false);
+            response.setErrorMessage("No Proposal found! Please create new proposals ! ");
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping(path = "/proposals/{proposalId}/vote", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData> createProposalVote(@PathVariable final Long proposalId, @RequestBody final ProposalVoteRequest requestData) {
+        ResponseData response = new ResponseData();
+        requestData.setProposalId(proposalId);
+        ProposalVote proposalVote = proposalService.createProposalVote(requestData);
+        if(proposalVote!=null){
+            response.setSuccess(true);
+            response.setData(proposalVote);
+        }else{
+            response.setSuccess(false);
+            response.setErrorMessage("Error in casting proposal vote : "+requestData.toString());
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+
+    @PatchMapping (path = "/proposals/{proposalId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData> updateProposalStatus(@PathVariable final Long proposalId, @RequestParam final ProposalStatus status) {
+        ResponseData response = new ResponseData();
+        ProposalDto proposal = proposalService.updateProposalState(proposalId, status);
+        if(proposal!=null){
+            response.setSuccess(true);
+            response.setData(proposal);
+        }else{
+            response.setSuccess(false);
+            response.setErrorMessage("Error in updating proposal : "+proposalId+ " to state : "+ status);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

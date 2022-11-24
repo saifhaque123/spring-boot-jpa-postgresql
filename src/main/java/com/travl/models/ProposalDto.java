@@ -1,5 +1,6 @@
 package com.travl.models;
 
+import com.travl.enums.ProposalStatus;
 import com.travl.enums.TravelMode;
 import lombok.Builder;
 import lombok.Data;
@@ -20,4 +21,5 @@ public class ProposalDto {
     private TravelMode travelMode;
     private Double vote;
     private Integer votersCount;
+    private ProposalStatus status;
 }
