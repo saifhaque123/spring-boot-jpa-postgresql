@@ -1,4 +1,4 @@
-package com.bezkoder.spring.jpa.postgresql.controller;
+package com.travl.controllers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,8 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.bezkoder.spring.jpa.postgresql.model.Tutorial;
-import com.bezkoder.spring.jpa.postgresql.repository.TutorialRepository;
+import com.travl.models.Tutorial;
+import com.travl.repositories.TutorialRepository;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
