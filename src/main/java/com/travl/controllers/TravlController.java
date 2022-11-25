@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api")
 @AllArgsConstructor
+@CrossOrigin(origins = "http://localhost:8080")
 public class TravlController {
     private final ProposalRepository proposalRepository;
     private final PlaceRepository placeRepository;
