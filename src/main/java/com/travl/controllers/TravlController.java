@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -74,13 +75,26 @@ public class TravlController {
     }
 
 
-    @GetMapping(path = "/proposals", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/trip", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ResponseData> getAllProposal(@RequestParam ProposalStatus status){
         ResponseData response = new ResponseData();
         List<ProposalResponseData> proposal = proposalService.getAllProposal();
-        if (status != null) {
-            proposal.stream().filter(i->i.getStatus().equals(status));
+        List<ProposalResponseData> filteredProposal = proposal.stream().filter(i->i.getStatus() == status).collect(Collectors.toList());
+
+        if(!filteredProposal.isEmpty()){
+            response.setSuccess(true);
+            response.setData(filteredProposal);
+        }else{
+            response.setSuccess(false);
+            response.setErrorMessage("No Proposal found! Please create new proposals ! ");
         }
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping(path = "/proposals", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ResponseData> getAllProposal(){
+        ResponseData response = new ResponseData();
+        List<ProposalResponseData> proposal = proposalService.getAllProposal();
         if(null!=proposal){
             response.setSuccess(true);
             response.setData(proposal);
