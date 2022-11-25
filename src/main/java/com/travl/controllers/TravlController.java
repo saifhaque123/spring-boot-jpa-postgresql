@@ -43,7 +43,7 @@ public class TravlController {
     @PostMapping(
             path = "/proposal",
             produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Proposal> createProposal(
+    public ResponseEntity<ResponseUniversal> createProposal(
             @RequestBody final CreateProposalRequestData requestData) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         Proposal proposal = Proposal.builder()
@@ -53,10 +53,34 @@ public class TravlController {
                 .endDate(LocalDate.parse(requestData.getEndDate(), formatter))
                 .travelMode(requestData.getTravelMode())
                 .build();
-        proposalRepository.save(proposal);
+        Proposal createdProposal = proposalRepository.save(proposal);
+        List<Place> places = new ArrayList<>();
+        for(String pl: requestData.getPlaces()){
+            Place p = Place.builder()
+                    .proposalId(createdProposal.getId())
+                    .placeName(pl)
+                    .build();
+            places.add(p);
+        }
+        List<Place> updatedPlaces=placeRepository.saveAll(places);
+        List<PlaceActivity> activities = new ArrayList<>();
+        for(Place p : updatedPlaces){
+            for(Activity ay: requestData.getActivities()){
+                PlaceActivity placeActivity = PlaceActivity.builder()
+                        .placeId(p.getId())
+                        .activityName(ay.getActivityName())
+                        .activityType(ay.getActivityType()).build();
+                activities.add(placeActivity);
+            }
+        }
+        List<PlaceActivity> updatedActivities = placeActivityRepository.saveAll(activities);
 
+        ResponseUniversal response = new ResponseUniversal();
+        response.setProposal(createdProposal);
+        response.setPlaces(updatedPlaces);
+        response.setActivities(updatedActivities);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(proposal);
+                .body(response);
     }
 
     @GetMapping(path = "/proposal/{proposalId}", produces = MediaType.APPLICATION_JSON_VALUE)
